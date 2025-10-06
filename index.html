@@ -101,14 +101,26 @@
 
       // Conditional message
       const numAmt = Number(amt);
-      if(numAmt <= 1000){
-        extraText.textContent = "Ay yazıq! Ay Kasıb!";
-      } else if(numAmt > 1000 && numAmt <= 2000){
-        extraText.textContent = "Heç olmasa yaşayışın var!";
-      } else if(numAmt > 2000 && numAmt <= 3000){
-        extraText.textContent = "Pis yaşamırsan ha!";
-      } else { // > 3000
-        extraText.textContent = "Bahalı həyat yaraşır bizə, Birilyantlar yağsın üzərimizə";
+      if(numAmt <= 400){
+        extraText.textContent = "İşçilərin minimum əməkhaqqı 2025-ci il yanvarın 1-dən 400 manatdan az ola bilməz!";}
+
+        else if(numAmt > 400 && numAmt < 1000){
+        extraText.textContent = "Ay yazıq! Ay kasıb!";}
+
+        else if(numAmt >= 1000 && numAmt <= 2000){
+        extraText.textContent = "Heç olmasa yaşayışın var!";} 
+        
+        else if(numAmt > 2000 && numAmt <= 3000){
+        extraText.textContent = "Pis yaşamırsan ha!";} 
+        
+        else if(numAmt > 3000 && numAmt <= 4000){
+        extraText.textContent = "Üzünə qarşı ən çox eşitdiyin xitablar: Müəllim! Müdir! <Adın> Bəy!";} 
+
+        else if(numAmt > 4000 && numAmt <= 5000){
+        extraText.textContent = "https://youtu.be/NAdlpfldF1M?si=MXsTu2ZrrU8p9A02";} 
+
+        else { // > 3000
+        extraText.textContent = "Vergidən yayınma — vergi üstünlüyü əldə etmək məqsədilə hər hansı formada bağlanılmış əqd və ya aparılmış əməliyyat.";
       }
 
       startParticles(amt);
