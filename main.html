@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salary Calculator — Gülməli</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg1:#0f172a;--accent:#ffd166;--muted:#94a3b8}
+    html,body{height:100%;margin:0;font-family:'Inter',system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    /* subtle SVG patterned background encoded as data URI to look like an "image" */
+    body{
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="%230b1220"/><stop offset="1" stop-color="%23142233"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><g opacity="0.06" fill="none" stroke="white"><circle cx="120" cy="100" r="80"/><circle cx="500" cy="350" r="120"/><circle cx="700" cy="700" r="250"/></g></svg>');
+      background-size:cover; color: #e6eef8;
+      display:flex;align-items:center;justify-content:center;overflow:hidden
+    }
+    .card{
+      text-align:center;backdrop-filter: blur(6px);padding:36px;border-radius:16px;box-shadow:0 10px 30px rgba(2,6,23,0.6);
+      min-width:320px;max-width:520px;margin:20px
+    }
+    h1{margin:0 0 18px;font-family:'Baloo 2',cursive;font-size:28px}
+    p.lead{color:var(--muted);margin:0 0 22px}
+    .btn{appearance:none;border:0;padding:14px 22px;border-radius:12px;font-weight:700;cursor:pointer}
+    .big-btn{background:linear-gradient(90deg,#ffd166,#ff9a56);color:#081124;font-size:20px;padding:18px 28px;border-radius:999px}
+
+    .form-row{display:flex;gap:8px;align-items:center;justify-content:center}
+    input[type=number]{padding:12px 14px;border-radius:10px;border:0;min-width:160px;font-size:16px}
+    .small-btn{background:#0ea5a0;color:white;padding:10px 16px;border-radius:10px}
+
+    /* result screen */
+    .result{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px;border-radius:16px
+    }
+    .result .amount{font-family:'Baloo 2',cursive;font-size:36px;margin-top:12px}
+    .muted{color:var(--muted)}
+
+    /* canvas overlay for particles */
+    #particles{position:fixed;inset:0;z-index:5;pointer-events:none}
+
+    /* subtle footer */
+    small{display:block;margin-top:12px;color:rgba(230,238,248,0.6)}
+
+    @media (max-width:420px){.card{padding:22px}}
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="card" id="app">
+    <div id="screen-intro">
+      <h1>Salary Calculator</h1>
+      <p class="lead">A tiny, slightly dramatic tool that tells you exactly what you already know — but fancier.</p>
+      <button id="startBtn" class="btn big-btn">Calculate my salary</button>
+      <small>Click the button. Don't worry — it won't ask for your bank PIN.</small>
+    </div>
+
+    <div id="screen-input" style="display:none">
+      <h1>Hesablama vaxtıdır</h1>
+      <p class="lead">Zəhmət olmasa, maaşınızı daxil edin:</p>
+      <div class="form-row">
+        <input id="salaryInput" type="number" min="0" step="0.01" placeholder="0.00" />
+        <div style="display:flex;flex-direction:column;align-items:flex-start">
+          <span class="muted">AZN</span>
+          <button id="calcBtn" class="btn small-btn" style="margin-top:6px">calculate</button>
+        </div>
+      </div>
+      <small>Hər şeyi bir neçə saniyə ərzində hesablayırıq. (tamamilə zarafatdır)</small>
+    </div>
+
+    <div id="screen-result" style="display:none">
+      <div class="result">
+        <h1>Hesablanmış nəticə</h1>
+        <div class="amount" id="resultText">Sizin maaşınız 0.00 dır</div>
+        <small class="muted">Bunu dostunuzla paylaşmaq istəyirsinizsə, ekran görüntüsü alın :)</small>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // simple state management
+    const startBtn = document.getElementById('startBtn');
+    const screenIntro = document.getElementById('screen-intro');
+    const screenInput = document.getElementById('screen-input');
+    const screenResult = document.getElementById('screen-result');
+    const calcBtn = document.getElementById('calcBtn');
+    const salaryInput = document.getElementById('salaryInput');
+    const resultText = document.getElementById('resultText');
+    const particlesCanvas = document.getElementById('particles');
+
+    startBtn.onclick = ()=>{
+      screenIntro.style.display='none';
+      screenInput.style.display='block';
+      salaryInput.focus();
+    }
+
+    function sanitizeAmount(v){
+      if(v==null||v==='') return null;
+      const num = Number(v);
+      if(!isFinite(num)) return null;
+      return Math.max(0, Math.round(num*100)/100).toFixed(2);
+    }
+
+    calcBtn.onclick = ()=>{
+      const amt = sanitizeAmount(salaryInput.value);
+      if(amt===null){
+        salaryInput.style.outline='2px solid rgba(255,160,100,0.9)';
+        salaryInput.placeholder='Zəhmət olmasa, düzgün rəqəm daxil edin';
+        salaryInput.focus();
+        return;
+      }
+      // show result
+      screenInput.style.display='none';
+      screenResult.style.display='block';
+      resultText.textContent = `Sizin maaşınız ${amt} dır`;
+      // start particles celebration
+      startParticles(amt);
+    }
+
+    // ---------- Simple particle system ----------
+    const ctx = particlesCanvas.getContext('2d');
+    let W, H, particles = [], running = false;
+
+    function resize(){
+      W = particlesCanvas.width = innerWidth;
+      H = particlesCanvas.height = innerHeight;
+    }
+    addEventListener('resize', resize);
+    resize();
+
+    function rand(min,max){return Math.random()*(max-min)+min}
+
+    function spawnBurst(amountLabel){
+      // spawn colorful coins/particles that float upward
+      const n = 120;
+      for(let i=0;i<n;i++){
+        particles.push({
+          x: W/2 + rand(-140,140),
+          y: H/2 + rand(-40,40),
+          vx: rand(-1.5,1.5),
+          vy: rand(-6,-1),
+          life: rand(70,130),
+          size: rand(6,18),
+          hue: ~~rand(20,340)
+        });
+      }
+      if(!running) animate();
+    }
+
+    function startParticles(label){
+      // short burst then slow fade
+      spawnBurst(label);
+      // steady gentle drift after 3s
+      setTimeout(()=>{
+        const t = setInterval(()=>{
+          if(particles.length<5) { clearInterval(t); }
+          spawnBurst(label);
+        },2000);
+      },3000);
+      // stop after 9s
+      setTimeout(()=>{ stopParticlesAfter(4000); },9000);
+    }
+
+    function stopParticlesAfter(ms){
+      setTimeout(()=>{ // clear and stop as particles fade
+        particles = [];
+      }, ms);
+    }
+
+    function animate(){
+      running = true;
+      ctx.clearRect(0,0,W,H);
+      for(let i=particles.length-1;i>=0;i--){
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.life--;
+        ctx.beginPath();
+        const g = ctx.createRadialGradient(p.x,p.y,p.size*0.1,p.x,p.y,p.size);
+        g.addColorStop(0, `hsla(${p.hue},90%,60%,0.95)`);
+        g.addColorStop(1, `hsla(${p.hue},90%,55%,0.2)`);
+        ctx.fillStyle = g;
+        ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+        ctx.fill();
+        if(p.life<=0 || p.y>H+50) particles.splice(i,1);
+      }
+      if(particles.length>0) requestAnimationFrame(animate); else running=false;
+    }
+
+    // small enhancement: press Enter to calculate
+    salaryInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') calcBtn.click(); });
+
+  </script>
+</body>
+</html>
